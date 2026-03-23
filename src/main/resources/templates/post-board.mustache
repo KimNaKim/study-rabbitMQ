@@ -1,0 +1,107 @@
+{{>layout/header}}
+
+<section class="card">
+    <h2 style="margin-top:0">📢 새 게시글 작성</h2>
+    <form action="/posts/save" method="post">
+        <div class="form-group">
+            <input type="text" name="title" class="form-control" placeholder="제목을 입력하세요" required>
+        </div>
+        <div class="form-group">
+            <textarea name="content" class="form-control" rows="3" placeholder="내용을 입력하세요" required></textarea>
+        </div>
+        <button type="submit" class="btn">글쓰기 (RabbitMQ 발행)</button>
+    </form>
+</section>
+
+<div style="display: grid; grid-template-columns: 1fr 300px; gap: var(--space-md);">
+    <!-- 게시글 목록 (DB 저장분) -->
+    <section class="card">
+        <h2 style="margin-top:0">📋 게시글 목록 <span class="badge">DB 직접 저장</span></h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>제목</th>
+                    <th>내용</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#posts}}
+                <tr>
+                    <td>{{id}}</td>
+                    <td>{{title}}</td>
+                    <td>{{content}}</td>
+                </tr>
+                {{/posts}}
+                {{^posts}}
+                <tr>
+                    <td colspan="3" style="text-align:center; color:var(--color-text-muted)">작성된 게시글이 없습니다.</td>
+                </tr>
+                {{/posts}}
+            </tbody>
+        </table>
+    </section>
+
+    <!-- 비동기 알림 내역 (RabbitMQ 처리분) -->
+    <aside class="card" style="background: #fefce8; border: 1px solid #fef08a;">
+        <h2 style="margin-top:0; color: #854d0e; font-size: 1.1rem;">🔔 실시간 알림 내역</h2>
+        <p style="font-size: 0.8rem; color: #a16207; margin-bottom: var(--space-sm);">* RabbitMQ 리스너가 비동기로 처리한 내역입니다.</p>
+        <div id="notification-list">
+            {{#notifications}}
+            <div class="notification-item">
+                <strong>[{{createdAt}}]</strong><br>
+                {{message}}
+            </div>
+            {{/notifications}}
+            {{^notifications}}
+            <p id="no-notifications" style="text-align:center; color:var(--color-text-muted); font-size: 0.85rem;">처리된 알림이 없습니다.</p>
+            {{/notifications}}
+        </div>
+    </aside>
+</div>
+
+<script>
+    // SSE 연결
+    const eventSource = new EventSource('/api/sse/notifications');
+
+    // 알림 이벤트 수신
+    eventSource.addEventListener('notification', (event) => {
+        const data = JSON.parse(event.data);
+        const notificationList = document.getElementById('notification-list');
+        const noNotiMsg = document.getElementById('no-notifications');
+
+        // "알림이 없습니다" 메시지 삭제
+        if (noNotiMsg) noNotiMsg.remove();
+
+        // 새 알림 요소 생성
+        const newItem = document.createElement('div');
+        newItem.className = 'notification-item';
+        newItem.style.backgroundColor = '#fde047'; // 노란색으로 강조
+        newItem.style.padding = '8px';
+        newItem.style.borderRadius = '4px';
+        newItem.style.marginBottom = '4px';
+        
+        // 날짜 포맷팅 (YYYY-MM-DDTHH:mm:ss -> 읽기 편하게)
+        const date = data.createdAt.replace('T', ' ').split('.')[0];
+        
+        newItem.innerHTML = `
+            <strong>[${date}]</strong><br>
+            ${data.message}
+        `;
+
+        // 목록 최상단에 삽입
+        notificationList.prepend(newItem);
+
+        // 3초 뒤 강조 해제
+        setTimeout(() => {
+            newItem.style.transition = 'background-color 2s';
+            newItem.style.backgroundColor = 'transparent';
+        }, 3000);
+    });
+
+    eventSource.onerror = (err) => {
+        console.warn("SSE 재연결 시도 중...");
+    };
+</script>
+
+{{>layout/footer}}

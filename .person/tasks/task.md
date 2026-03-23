@@ -20,10 +20,10 @@
 ---
 
 ## 📬 3단계: 기본형 실습 (Simple Queue - 1:1)
-- [ ] **도메인 설계**: `Post` (id, title, content) Entity 및 Repository 생성
-- [ ] **메시지 발행 (Producer)**: 게시글 저장 시 큐에 메시지 전송 로직 구현
-- [ ] **메시지 수신 (Consumer)**: `@RabbitListener`를 이용한 비동기 로그 출력
-- [ ] **동작 테스트**: 게시글 작성 후 콘솔에 로그가 비동기로 찍히는지 확인
+- [x] **도메인 설계**: `Post` (id, title, content) Entity 및 Repository 생성
+- [x] **메시지 발행 (Producer)**: 게시글 저장 시 큐에 메시지 전송 로직 구현
+- [x] **메시지 수신 (Consumer)**: `@RabbitListener`를 이용한 비동기 로그 출력
+- [x] **동작 테스트**: 게시글 작성 후 콘솔에 로그가 비동기로 찍히는지 확인
 
 ---
 
